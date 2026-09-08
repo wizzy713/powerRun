@@ -1,0 +1,43 @@
+# Gradle / Android build outputs and caches
+.gradle/
+build/
+**/build/
+local.properties
+.idea/
+*.iml
+.gradle
+gradle-app.setting
+.navigation/
+captures/
+output.json
+
+# Arduino / PlatformIO / Compiler build artifacts
+build_out/
+binaries/
+*.bin
+*.elf
+*.hex
+*.o
+*.d
+sdkconfig
+
+# Wi-Fi based sketches and servers (Excluded - BLE-only project)
+esp32_websocket_server.ino
+esp32_websocket_server/
+esp32_websocket_server_wifi_fix.ino
+esp32_websocket_server_wifi_fix/
+powerrun_dashboard/
+wifi_connect/
+power-run.jsx
+sensor-monitor.jsx
+SETUP.md
+serial_boot_log.txt
+files/
+files.zip
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+push_to_github.sh
