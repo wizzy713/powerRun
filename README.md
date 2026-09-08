@@ -32,6 +32,7 @@ A complete embedded and mobile telemetry platform designed for athletic tracking
   - [Metrics & Telemetry Display](#metrics--telemetry-display)
 - [Telemetry Processing & Formulas](#telemetry-processing--formulas)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
@@ -303,4 +304,8 @@ If infrared signal falls below threshold ($IR < 20000$) for $> 200$ consecutive 
 
 ## License
 
-This project is open source and available under the **MIT License**.
+This project is a personal hobby project provided under the **Personal & Hobbyist Non-Commercial License**. See [`LICENSE`](LICENSE) for full details.
+
+- **Personal & Recreational Use**: Free to use, adapt, and build upon for DIY athletic tracking, educational, and amateur experimentation.
+- **Non-Commercial**: Commercial distribution, sale, or closed-source commercial product integration is strictly prohibited without explicit written permission.
+- **Not for Medical Use**: This software, firmware, and associated hardware setups are amateur hobbyist prototypes and must not be used for clinical diagnostics, life support, or safety-critical applications.
