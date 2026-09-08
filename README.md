@@ -10,7 +10,6 @@ A complete embedded and mobile telemetry platform designed for athletic tracking
 
 - [System Architecture](#system-architecture)
 - [Key Features](#key-features)
-- [Repository Structure](#repository-structure)
 - [Hardware Setup & Pinout](#hardware-setup--pinout)
   - [I2C Bus Pin Selection (ESP32-C3)](#i2c-bus-pin-selection-esp32-c3)
   - [INA219 Power Monitor Wiring](#ina219-power-monitor-wiring)
@@ -38,41 +37,18 @@ A complete embedded and mobile telemetry platform designed for athletic tracking
 
 ## System Architecture
 
-```mermaid
-graph TD
-    subgraph SENSORS ["Hardware Sensors"]
-        INA["INA219 High-Side Power Monitor<br/>(I2C: 0x40, SDA: GPIO4, SCL: GPIO5)"]
-        MAX["MAX30102 Pulse Oximeter<br/>(I2C: 0x57, SDA: GPIO4, SCL: GPIO5)"]
-        ANA["Analog Pulse Sensor<br/>(ADC1: GPIO1 - Optional)"]
-    end
+PowerRun uses an end-to-end embedded hardware-to-mobile architecture:
 
-    subgraph ESP32 ["ESP32-C3 Microcontroller (powerrun_ble.ino)"]
-        CORE["FreeRTOS / Arduino Core"]
-        SENS_READ["Sensor Polling & Averaging Loop<br/>(Peak detection & 4-beat rolling filter)"]
-        NIMBLE["NimBLE-Arduino Stack<br/>(Nordic UART Service: NUS)"]
-        TX_CHUNK["Packet Serializer & Chunking<br/>(20-byte chunks @ 5 Hz, MTU 247)"]
-        CORE --> SENS_READ
-        SENS_READ --> TX_CHUNK
-        TX_CHUNK --> NIMBLE
-    end
-
-    INA -->|I2C 100 kHz| SENS_READ
-    MAX -->|I2C 100 kHz| SENS_READ
-    ANA -->|ADC1 Channel 1| SENS_READ
-
-    subgraph BLE_LINK ["Bluetooth Low Energy (2.4 GHz Air Interface)"]
-        NIMBLE -->|GATT Notifications<br/>NUS TX (6E400003...)| CLIENTS
-    end
-
-    subgraph CLIENT ["Client Display"]
-        subgraph ANDROID ["Android Device (PowerRunApp)"]
-            BLELINK["BleLink.java<br/>(Scan, Reassembly, GATT Callback)"]
-            BRIDGE["JavascriptInterface<br/>(PowerRunBle Bridge)"]
-            WEBVIEW["WebView (assets/dashboard.html)<br/>STMicroelectronics Themed UI"]
-            BLELINK --> BRIDGE --> WEBVIEW
-        end
-    end
-```
+- **Hardware Sensors**:
+  - **INA219**: High-side DC power monitor measuring bus voltage ($0-26\text{ V}$) and current draw ($\pm 3.2\text{ A}$) over I2C at address `0x40`.
+  - **MAX30102**: Photoplethysmography (PPG) pulse oximeter measuring pulse rate and blood volume changes over the shared I2C bus at address `0x57`.
+  - **Analog Pulse Sensor (Optional)**: Can be wired directly to ADC1 (GPIO 1) as a fallback biometric input.
+- **ESP32-C3 Microcontroller Firmware (`powerrun_ble.ino`)**:
+  - Continuously polls sensors and runs a dynamic 4-beat rolling filter with peak detection.
+  - Formats sensor readings into compact JSON telemetry frames.
+  - Streams 20-byte chunks at 5 Hz (200 ms intervals) over BLE notifications via the NimBLE-Arduino stack using the Nordic UART Service (NUS).
+- **Android Companion App (`PowerRunApp`)**:
+  - Native BLE scanner and GATT client (`BleLink.java`) connects to the ESP32, reassembles incoming chunks into JSON strings, and passes telemetry across a JavaScript bridge (`PowerRunBle`) into the hardware-accelerated dashboard display.
 
 ---
 
@@ -85,36 +61,6 @@ graph TD
 - **Biometric Heart Rate Extraction**: Photoplethysmography (PPG) peak detection with dynamic 4-beat window averaging and active finger-detection gating.
 - **Dedicated Android Companion App**: Full-screen WebView interface with background BLE scanning, automatic reconnection, and live metrics display.
 - **Safety Gating & Alerts**: Visual low-battery alarm triggers when capacity drops below critical levels.
-
----
-
-## Repository Structure
-
-```
-├── powerrun_ble/
-│   └── powerrun_ble.ino           # ESP32-C3 BLE firmware (NimBLE + INA219 + MAX30102)
-├── PowerRunApp/                   # Complete Android Studio project
-│   ├── app/
-│   │   ├── src/main/
-│   │   │   ├── java/com/powerrun/dashboard/
-│   │   │   │   ├── MainActivity.java    # Android WebView shell & JS bridge
-│   │   │   │   └── BleLink.java         # Native BLE GATT scanner & parser
-│   │   │   ├── assets/
-│   │   │   │   └── dashboard.html       # Built-in responsive telemetry UI
-│   │   │   ├── res/                     # Icons, app styles, theme configs
-│   │   │   └── AndroidManifest.xml      # BLE permissions & hardware flags
-│   │   └── build.gradle.kts             # App build config (SDK 35, Java 11)
-│   ├── build.gradle.kts
-│   ├── settings.gradle.kts
-│   └── gradlew                          # Gradle wrapper
-├── PowerRun-debug.apk             # Ready-to-install Android APK
-├── i2c_scan/
-│   └── i2c_scan.ino               # Hardware diagnostic tool for I2C bus debugging
-├── I2C_REFERENCE.md               # Technical I2C bus timing & register documentation
-├── I2C_EXAMPLES.md                # Example code snippets for INA219 registers
-├── .gitignore                     # Ignores build files and legacy Wi-Fi code
-└── README.md                      # Comprehensive project guide
-```
 
 ---
 
@@ -348,7 +294,6 @@ If infrared signal falls below threshold ($IR < 20000$) for $> 200$ consecutive 
 | :--- | :--- | :--- |
 | **I2C Bus Stuck Low / Sensors not detected** | Loose wiring, incorrect SDA/SCL pins, or missing pull-ups. | Run `i2c_scan/i2c_scan.ino`. Ensure SDA is **GPIO 4** and SCL is **GPIO 5**. Verify 3.3V supply. |
 | **ESP32 boots into download mode / won't run** | Strapping pins pulled low during boot. | Avoid using GPIO 8 or GPIO 9 for I2C. Connect sensors strictly to GPIO 4 and 5. |
-| **"BLE unavailable" on dashboard** | Browser lacks Web Bluetooth or not running on secure origin. | Use Google Chrome or Edge. Ensure the page is accessed via `localhost`, `file:///`, or `https://`. |
 | **"Turn on Bluetooth" on Android app** | Phone Bluetooth adapter is powered off. | Turn on Bluetooth in Android Quick Settings. |
 | **"Grant permission" on Android app** | Nearby device permissions rejected. | Open Android Settings -> Apps -> Power Run -> Permissions -> Allow Nearby Devices / Location. |
 | **Heart rate reads 0 BPM** | No finger on MAX30102 sensor or ambient light interference. | Place fingertip gently on the MAX30102 LED surface. Avoid heavy pressure that restricts blood flow. |
