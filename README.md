@@ -41,7 +41,7 @@ A complete embedded and mobile telemetry platform designed for athletic tracking
 PowerRun uses an end-to-end embedded hardware-to-mobile architecture:
 
 - **Hardware Sensors**:
-  - **INA219**: High-side DC power monitor measuring bus voltage ($0-26\text{ V}$) and current draw ($\pm 3.2\text{ A}$) over I2C at address `0x40`.
+  - **INA219**: High-side DC power monitor measuring bus voltage (0–26 V) and current draw (±3.2 A) over I2C at address `0x40`.
   - **MAX30102**: Photoplethysmography (PPG) pulse oximeter measuring pulse rate and blood volume changes over the shared I2C bus at address `0x57`.
   - **Analog Pulse Sensor (Optional)**: Can be wired directly to ADC1 (GPIO 1) as a fallback biometric input.
 - **ESP32-C3 Microcontroller Firmware (`powerrun_ble.ino`)**:
@@ -58,7 +58,7 @@ PowerRun uses an end-to-end embedded hardware-to-mobile architecture:
 - **Zero-Wi-Fi Independence**: Operates without routers, Wi-Fi passwords, IP addresses, or hotspots. Ideal for runners outdoors.
 - **Ultra-Low Latency & High Rate**: Telemetry pushed every 200 ms (5 Hz) over BLE notifications.
 - **Efficient Memory Footprint**: Uses `NimBLE-Arduino` for lower RAM and flash consumption than traditional Bluedroid.
-- **Full Electrical Diagnostics**: Measures bus voltage ($0-26\text{ V}$), current draw ($\pm 3.2\text{ A}$), and instantaneous wattage with peak power hold tracking.
+- **Full Electrical Diagnostics**: Measures bus voltage (0–26 V), current draw (±3.2 A), and instantaneous wattage with peak power hold tracking.
 - **Biometric Heart Rate Extraction**: Photoplethysmography (PPG) peak detection with dynamic 4-beat window averaging and active finger-detection gating.
 - **Dedicated Android Companion App**: Full-screen WebView interface with background BLE scanning, automatic reconnection, and live metrics display.
 - **Safety Gating & Alerts**: Visual low-battery alarm triggers when capacity drops below critical levels.
@@ -81,7 +81,7 @@ PowerRun uses **GPIO 4 (SDA)** and **GPIO 5 (SCL)** for safe, conflict-free I2C 
 
 ### INA219 Power Monitor Wiring
 
-The INA219 measures high-side DC voltage and current via an on-board $0.1\ \Omega$ shunt resistor.
+The INA219 measures high-side DC voltage and current via an on-board 0.1 Ω shunt resistor.
 
 | ESP32-C3 Pin | INA219 Pin | Notes |
 | :--- | :--- | :--- |
@@ -91,7 +91,7 @@ The INA219 measures high-side DC voltage and current via an on-board $0.1\ \Omeg
 | **GPIO 5** | **SCL** | I2C Clock line (needs 4.7kΩ pull-up if not on module) |
 
 **Load Wiring**:
-- **VIN+**: Connect to positive terminal of power source / battery ($3.0\text{ V} - 26\text{ V}$).
+- **VIN+**: Connect to positive terminal of power source / battery (3.0 V – 26 V).
 - **VIN-**: Connect to positive terminal of load / circuit under test.
 - **GND**: Common ground between source, load, and ESP32.
 
@@ -176,7 +176,7 @@ PowerRun implements the standard **Nordic UART Service (NUS)** protocol, allowin
 
 - **Advertisement Name**: `PowerRun-BLE`
 - **TX Power**: `+9 dBm` (`ESP_PWR_LVL_P9`)
-- **Connection Interval**: $15\text{ ms} - 30\text{ ms}$ (`min=12, max=24, latency=0, timeout=200`)
+- **Connection Interval**: 15 ms – 30 ms (`min=12, max=24, latency=0, timeout=200`)
 
 ### Telemetry Packet Format
 
@@ -188,9 +188,9 @@ Every 200 ms, the ESP32 pushes a single-line JSON string terminated by a newline
 
 | Key | Type | Unit | Description |
 | :--- | :--- | :--- | :--- |
-| `voltage` | `float` | Volts ($V$) | Bus voltage across source and ground |
-| `current` | `float` | Milliamps ($mA$) | Current through the $0.1\ \Omega$ shunt |
-| `power` | `float` | Watts ($W$) | Power delivered ($V \times I$) |
+| `voltage` | `float` | Volts (V) | Bus voltage across source and ground |
+| `current` | `float` | Milliamps (mA) | Current through the 0.1 Ω shunt |
+| `power` | `float` | Watts (W) | Power delivered (V × I) |
 | `heartRate` | `int` | BPM | Calculated heart rate (0 if no finger detected) |
 
 ### MTU & Chunk Reassembly
@@ -249,9 +249,9 @@ The output APK will be generated at `PowerRunApp/app/build/outputs/apk/debug/app
 The embedded UI renders high-performance Canvas 2D telemetry cards using the **STMicroelectronics Brand Palette** (Navy Deep Blue `#00205B`, Cyan Blue `#0082C8`, Vibrant Green `#50B848`, zero purple):
 
 1. **POWER % REMAIN ON HOLD**:
-   - Primary gauge showing remaining battery capacity based on discharge curve ($3.0\text{ V} - 3.8\text{ V}$).
+   - Primary gauge showing remaining battery capacity based on discharge curve (3.0 V – 3.8 V).
    - **Peak Power Hold**: Latches and displays the maximum wattage recorded during the session.
-   - Secondary indicators for Live Voltage ($V$), Instant Current ($mA$), and Active Power ($W$).
+   - Secondary indicators for Live Voltage (V), Instant Current (mA), and Active Power (W).
 2. **HEART RATE MONITOR**:
    - Digital BPM readout with an animated SVG heart pulsing synchronously with the runner's pulse.
    - Rhythm status classifications: `STANDBY`, `ACTIVE`, `ELEVATED`, `PEAK ZONE`.
@@ -259,7 +259,7 @@ The embedded UI renders high-performance Canvas 2D telemetry cards using the **S
    - 60-point sliding window Canvas chart.
    - Shows electrical power/current curve (green) overlaid with heart rate trend (cyan).
 4. **LOW BATTERY BANNER**:
-   - Automatically drops down when remaining capacity is $< 15\%$ or voltage is $< 3.2\text{ V}$.
+   - Automatically drops down when remaining capacity is < 15% or voltage is < 3.2 V.
 
 ---
 
@@ -267,25 +267,47 @@ The embedded UI renders high-performance Canvas 2D telemetry cards using the **S
 
 ### 1. Battery Capacity Percentage
 
-The battery remaining percentage is derived using a linear mapping between defined minimum cutoff and nominal fully-charged voltages:
+The battery remaining percentage is derived using a linear voltage mapping between the minimum cutoff voltage and nominal fully-charged voltage, clamped between 0% and 100%:
 
-$$\text{Capacity } \% = \operatorname{clamp}\left( \frac{V_{\text{measured}} - V_{\min}}{V_{\max} - V_{\min}} \times 100,\ 0,\ 100 \right)$$
+```
+                       V_measured - V_min
+    Capacity (%)  =  ----------------------  ×  100
+                          V_max - V_min
+```
 
-*Default parameters: $V_{\min} = 3.0\text{ V}$, $V_{\max} = 3.8\text{ V}$ (adjustable in dashboard settings).*
+* **Formula**: `Capacity % = clamp(((V_measured - V_min) / (V_max - V_min)) * 100, 0, 100)`
+* **Default Values**: `V_min = 3.0 V` (empty cutoff), `V_max = 3.8 V` (full charge).
+* **Low Battery Alert**: When capacity drops below **15%** (or voltage `< 3.2 V`), an on-screen warning banner triggers automatically.
+
+---
 
 ### 2. Peak Power Hold
 
-The maximum power draw observed across all samples is latched:
+The system tracks and latches the highest instantaneous wattage observed during the session:
 
-$$P_{\text{hold}} = \max\left(P_{\text{hold}},\ P_{\text{current}}\right)$$
+```
+    P_hold = max(P_hold, P_current)
+```
+
+Where instantaneous power is computed from live bus voltage and shunt current:
+
+```
+    Power (W) = Voltage (V) × (Current (mA) / 1000)
+```
+
+---
 
 ### 3. Heart Rate Dynamic Moving Average
 
-The MAX30102 photoplethysmography (PPG) algorithm measures infrared absorption pulses. To prevent delays when starting a workout, the BPM average computes over available beats up to $N = 4$:
+The MAX30102 photoplethysmography (PPG) algorithm measures infrared absorption pulses. To prevent lag when starting a workout, the BPM calculation uses a dynamic sliding window that scales with the number of detected heartbeats up to 4 beats:
 
-$$\text{BPM}_{\text{avg}} = \frac{1}{K} \sum_{i=0}^{K-1} \text{BPM}_i \quad \text{where } K = \min(\text{captured\_beats}, 4)$$
+```
+                  1     K-1
+    BPM_avg  =   ---  ×  ∑  BPM[i]        where K = min(detected_beats, 4)
+                  K     i=0
+```
 
-If infrared signal falls below threshold ($IR < 20000$) for $> 200$ consecutive polling cycles, the finger is treated as removed and BPM resets to $0$.
+* **Finger Detection**: If the infrared signal falls below threshold (`IR < 20,000`) for more than 200 consecutive polling cycles, the finger is treated as removed and the BPM display resets to `0`.
 
 ---
 
