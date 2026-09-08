@@ -1,6 +1,6 @@
 # PowerRun - Real-Time BLE Biometric & Power Telemetry System
 
-A complete embedded and mobile telemetry platform designed for athletic tracking, portable power monitoring, and wearable performance diagnostics. PowerRun captures real-time electrical power data (voltage, current, power draw, capacity reserve) and biometric vitals (heart rate BPM and pulse rhythm) on an **ESP32-C3**, streaming updates at **5 Hz over Bluetooth Low Energy (BLE)** to a dedicated **Android companion application** or any **Web Bluetooth-enabled browser**.
+A complete embedded and mobile telemetry platform designed for athletic tracking, portable power monitoring, and wearable performance diagnostics. PowerRun captures real-time electrical power data (voltage, current, power draw, capacity reserve) and biometric vitals (heart rate BPM and pulse rhythm) on an **ESP32-C3**, streaming updates at **5 Hz over Bluetooth Low Energy (BLE)** to a dedicated **Android companion application**.
 
 > **Note**: This repository contains the **pure Bluetooth Low Energy (BLE)** architecture of PowerRun. All legacy Wi-Fi and WebSocket implementations have been deliberately excluded in favor of BLE to minimize battery draw, eliminate router/hotspot dependencies, and enable immediate point-to-point pairing outdoors.
 
@@ -30,9 +30,7 @@ A complete embedded and mobile telemetry platform designed for athletic tracking
   - [Installing Pre-built APK](#installing-pre-built-apk)
   - [Building from Source](#building-from-source)
   - [Bluetooth Permissions](#bluetooth-permissions)
-- [Web Dashboard: `power-run.html`](#web-dashboard-power-runhtml)
-  - [Web Bluetooth Support](#web-bluetooth-support)
-  - [Metrics & Telemetry Cards](#metrics--telemetry-cards)
+  - [Metrics & Telemetry Display](#metrics--telemetry-display)
 - [Telemetry Processing & Formulas](#telemetry-processing--formulas)
 - [Troubleshooting](#troubleshooting)
 
@@ -66,17 +64,12 @@ graph TD
         NIMBLE -->|GATT Notifications<br/>NUS TX (6E400003...)| CLIENTS
     end
 
-    subgraph CLIENTS ["Client Displays"]
+    subgraph CLIENT ["Client Display"]
         subgraph ANDROID ["Android Device (PowerRunApp)"]
             BLELINK["BleLink.java<br/>(Scan, Reassembly, GATT Callback)"]
             BRIDGE["JavascriptInterface<br/>(PowerRunBle Bridge)"]
             WEBVIEW["WebView (assets/dashboard.html)<br/>STMicroelectronics Themed UI"]
             BLELINK --> BRIDGE --> WEBVIEW
-        end
-        subgraph BROWSER ["Desktop / Mobile Web Browser"]
-            WEBBLE["Web Bluetooth API<br/>(navigator.bluetooth)"]
-            HTMLDASH["power-run.html<br/>Canvas Strip-Chart & Gauges"]
-            WEBBLE --> HTMLDASH
         end
     end
 ```
@@ -90,9 +83,7 @@ graph TD
 - **Efficient Memory Footprint**: Uses `NimBLE-Arduino` for lower RAM and flash consumption than traditional Bluedroid.
 - **Full Electrical Diagnostics**: Measures bus voltage ($0-26\text{ V}$), current draw ($\pm 3.2\text{ A}$), and instantaneous wattage with peak power hold tracking.
 - **Biometric Heart Rate Extraction**: Photoplethysmography (PPG) peak detection with dynamic 4-beat window averaging and active finger-detection gating.
-- **Dual Display Support**:
-  - **Native Android App**: Full-screen WebView interface with background BLE scanning and automatic reconnection.
-  - **Direct Web Bluetooth**: Run `power-run.html` directly in Chrome or Edge without installing software.
+- **Dedicated Android Companion App**: Full-screen WebView interface with background BLE scanning, automatic reconnection, and live metrics display.
 - **Safety Gating & Alerts**: Visual low-battery alarm triggers when capacity drops below critical levels.
 
 ---
@@ -117,7 +108,6 @@ graph TD
 │   ├── settings.gradle.kts
 │   └── gradlew                          # Gradle wrapper
 ├── PowerRun-debug.apk             # Ready-to-install Android APK
-├── power-run.html                 # Standalone web dashboard with Web Bluetooth support
 ├── i2c_scan/
 │   └── i2c_scan.ino               # Hardware diagnostic tool for I2C bus debugging
 ├── I2C_REFERENCE.md               # Technical I2C bus timing & register documentation
@@ -263,7 +253,7 @@ Every 200 ms, the ESP32 pushes a single-line JSON string terminated by a newline
   ```cpp
   void notifyChunked(const String& s);
   ```
-- Clients (`BleLink.java` and `power-run.html`) maintain an internal buffer (`rxBuf`) accumulating bytes until `\n` is encountered, ensuring complete, uncorrupted JSON frames.
+- The Android client (`BleLink.java`) maintains an internal buffer (`rxBuf`) accumulating bytes until `\n` is encountered, ensuring complete, uncorrupted JSON frames.
 
 ---
 
@@ -307,21 +297,9 @@ The output APK will be generated at `PowerRunApp/app/build/outputs/apk/debug/app
 - **Android 12+ (API 31+)**: `BLUETOOTH_SCAN` (`neverForLocation`), `BLUETOOTH_CONNECT`.
 - **Android 11 & Below (API <= 30)**: `BLUETOOTH`, `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`.
 
----
+### Metrics & Telemetry Display
 
-## Web Dashboard: `power-run.html`
-
-The dashboard is built with responsive HTML5, CSS3, and high-performance Canvas 2D rendering using the **STMicroelectronics Brand Palette** (Navy Deep Blue `#00205B`, Cyan Blue `#0082C8`, Vibrant Green `#50B848`, zero purple).
-
-### Web Bluetooth Support
-
-`power-run.html` directly supports the browser's **Web Bluetooth API** (`navigator.bluetooth`):
-1. Open `power-run.html` in **Google Chrome**, **Microsoft Edge**, or **Opera** (desktop or Android).
-2. Click **Connect Bluetooth**.
-3. Select **`PowerRun-BLE`** from the browser's pairing dialog.
-4. Telemetry begins streaming immediately.
-
-### Metrics & Telemetry Cards
+The embedded UI renders high-performance Canvas 2D telemetry cards using the **STMicroelectronics Brand Palette** (Navy Deep Blue `#00205B`, Cyan Blue `#0082C8`, Vibrant Green `#50B848`, zero purple):
 
 1. **POWER % REMAIN ON HOLD**:
    - Primary gauge showing remaining battery capacity based on discharge curve ($3.0\text{ V} - 3.8\text{ V}$).

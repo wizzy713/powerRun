@@ -21,13 +21,14 @@ binaries/
 *.d
 sdkconfig
 
-# Wi-Fi based sketches and servers (Excluded - BLE-only project)
+# Web dashboards and Wi-Fi sketches (Excluded)
 esp32_websocket_server.ino
 esp32_websocket_server/
 esp32_websocket_server_wifi_fix.ino
 esp32_websocket_server_wifi_fix/
 powerrun_dashboard/
 wifi_connect/
+power-run.html
 power-run.jsx
 sensor-monitor.jsx
 SETUP.md
